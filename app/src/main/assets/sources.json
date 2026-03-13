@@ -1,0 +1,146 @@
+[
+  {
+    "id": "iptv-org-master",
+    "name": "IPTV-org Global",
+    "url": "https://iptv-org.github.io/iptv/index.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "iptv-org-category",
+    "name": "IPTV-org Categories",
+    "url": "https://iptv-org.github.io/iptv/index.category.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "iptv-org-region",
+    "name": "IPTV-org Regions",
+    "url": "https://iptv-org.github.io/iptv/index.region.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "free-tv-master",
+    "name": "Free-TV Master Playlist",
+    "url": "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "world-iptv",
+    "name": "World IPTV",
+    "url": "https://lupael.github.io/IPTV/world.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "pluto-tv",
+    "name": "Pluto TV",
+    "url": "https://i.mjh.nz/PlutoTV/all.m3u8",
+    "type": "M3U",
+    "category": "FAST TV",
+    "priority": 1
+  },
+  {
+    "id": "plex-tv",
+    "name": "Plex TV",
+    "url": "https://i.mjh.nz/Plex/all.m3u8",
+    "type": "M3U",
+    "category": "FAST TV",
+    "priority": 1
+  },
+  {
+    "id": "rakuten-tv",
+    "name": "Rakuten TV",
+    "url": "https://i.mjh.nz/RakutenTV/all.m3u8",
+    "type": "M3U",
+    "category": "FAST TV",
+    "priority": 1
+  },
+  {
+    "id": "samsung-tv-plus",
+    "name": "Samsung TV Plus",
+    "url": "https://i.mjh.nz/SamsungTVPlus/all.m3u8",
+    "type": "M3U",
+    "category": "FAST TV",
+    "priority": 1
+  },
+  {
+    "id": "xumo-tv",
+    "name": "Xumo TV",
+    "url": "https://i.mjh.nz/Xumo/all.m3u8",
+    "type": "M3U",
+    "category": "FAST TV",
+    "priority": 1
+  },
+  {
+    "id": "tubi-tv",
+    "name": "Tubi TV",
+    "url": "https://i.mjh.nz/TubiTV/all.m3u8",
+    "type": "M3U",
+    "category": "FAST TV",
+    "priority": 1
+  },
+  {
+    "id": "iptv-bangladesh",
+    "name": "IPTV-org Bangladesh",
+    "url": "https://iptv-org.github.io/iptv/countries/bd.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "iptv-india",
+    "name": "IPTV-org India",
+    "url": "https://iptv-org.github.io/iptv/countries/in.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "iptv-usa",
+    "name": "IPTV-org USA",
+    "url": "https://iptv-org.github.io/iptv/countries/us.m3u",
+    "type": "M3U",
+    "category": "Live TV",
+    "priority": 1
+  },
+  {
+    "id": "archive-org-movies",
+    "name": "Archive.org Feature Films",
+    "url": "https://archive.org/advancedsearch.php?q=mediatype:movies+AND+collection:feature_films&fl[]=identifier,title,description,year&rows=200&output=json",
+    "type": "JSON",
+    "category": "Movies",
+    "priority": 2
+  },
+  {
+    "id": "archive-org-classic-tv",
+    "name": "Archive.org Classic TV",
+    "url": "https://archive.org/advancedsearch.php?q=collection:classic_tv&fl[]=identifier,title,description,year&rows=200&output=json",
+    "type": "JSON",
+    "category": "Series",
+    "priority": 2
+  },
+  {
+    "id": "archive-org-serial",
+    "name": "Archive.org Serials",
+    "url": "https://archive.org/advancedsearch.php?q=collection:serial&fl[]=identifier,title,description,year&rows=200&output=json",
+    "type": "JSON",
+    "category": "Series",
+    "priority": 2
+  },
+  {
+    "id": "archive-org-television",
+    "name": "Archive.org Television Collection",
+    "url": "https://archive.org/advancedsearch.php?q=collection:television&fl[]=identifier,title,description,year&rows=200&output=json",
+    "type": "JSON",
+    "category": "Series",
+    "priority": 2
+  }
+]
