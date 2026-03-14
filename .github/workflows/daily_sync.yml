@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Use the PAT Secret to allow updating workflows and bypassing restrictions
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -22,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install aiohttp
+          pip install aiohttp urllib3 certifi
 
       - name: Run Aggregator
         env:
@@ -36,4 +39,5 @@ jobs:
           git add app/src/main/assets/curated_channels.json
           git add app/src/main/assets/movies.json
           git add app/src/main/assets/series.json
+          # Only push if there are actual data changes
           git diff --quiet && git diff --staged --quiet || (git commit -m "Automated daily content sync [skip ci]" && git push)

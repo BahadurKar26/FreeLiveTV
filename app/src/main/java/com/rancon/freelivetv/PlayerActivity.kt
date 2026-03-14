@@ -59,6 +59,7 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
 import com.rancon.freelivetv.data.Channel
 import com.rancon.freelivetv.data.FtpDataSource
@@ -112,8 +113,6 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Review 805: Keep screen on during playback
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         contentId = intent.getStringExtra("channel_id") ?: ""
@@ -235,13 +234,19 @@ class PlayerActivity : ComponentActivity() {
                 .setUpstreamDataSourceFactory(httpDataSourceFactory)
                 .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
+            // Review 1251: Enhanced Extractor Factory for BDIX .ts and .mkv files
+            val extractorsFactory = DefaultExtractorsFactory()
+                .setConstantBitrateSeekingEnabled(true)
+
             val mediaSource: MediaSource = when {
                 url.startsWith("ftp://", ignoreCase = true) -> {
                     val ftpDataSourceFactory = DataSource.Factory { FtpDataSource() }
                     DefaultMediaSourceFactory(this).setDataSourceFactory(ftpDataSourceFactory).createMediaSource(MediaItem.fromUri(url))
                 }
-                url.endsWith(".mkv", ignoreCase = true) || url.endsWith(".mp4", ignoreCase = true) -> {
-                    ProgressiveMediaSource.Factory(cacheDataSourceFactory).createMediaSource(MediaItem.fromUri(url))
+                // Review 1251: Handling varied BDIX file formats over HTTP
+                url.contains(".ts", ignoreCase = true) || url.contains(".mkv", ignoreCase = true) || url.contains(".mp4", ignoreCase = true) -> {
+                    ProgressiveMediaSource.Factory(cacheDataSourceFactory, extractorsFactory)
+                        .createMediaSource(MediaItem.fromUri(url))
                 }
                 else -> HlsMediaSource.Factory(cacheDataSourceFactory).createMediaSource(MediaItem.fromUri(url))
             }
@@ -373,7 +378,6 @@ class PlayerActivity : ComponentActivity() {
         recordWatchDuration()
     }
 
-    // Review 801: Robust release in onStop to prevent background leaks
     override fun onStop() {
         savePlaybackProgress()
         recordWatchDuration()
@@ -463,5 +467,19 @@ class PlayerActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun enterPipMode() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+            enterPictureInPictureMode(params)
+        }
+    }
+
+    override fun onUserLeaveHint() { if (isPlaying && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) enterPipMode() }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isInPipMode = isInPictureInPictureMode
     }
 }
