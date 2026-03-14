@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">FreeLiveTV powered by RANCON</string>
+    <string name="loading_channels">Loading channels...</string>
+    <string name="retry">RETRY</string>
+    <string name="back">Back</string>
+    <string name="ok">OK</string>
+    <string name="cancel">CANCEL</string>
+    <string name="reset">RESET</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">HOME</string>
+    <string name="nav_live_tv">LIVE TV</string>
+    <string name="nav_movies">MOVIES</string>
+    <string name="nav_series">SERIES</string>
+    <string name="nav_you">YOU</string>
+
+    <!-- Screen Titles -->
+    <string name="title_bangla_channels">BANGLA CHANNELS</string>
+    <string name="title_global_channels">GLOBAL CHANNELS</string>
+    <string name="title_most_watched">MOST WATCHED</string>
+    <string name="title_recently_played">RECENTLY PLAYED</string>
+    <string name="title_live_now">LIVE NOW</string>
+    <string name="title_recommended">RECOMMENDED FOR YOU</string>
+    <string name="title_popular_categories">POPULAR CATEGORIES</string>
+    <string name="title_continue_watching">CONTINUE WATCHING</string>
+    <string name="title_favorites">FAVORITES</string>
+    <string name="title_search">SEARCH</string>
+
+    <!-- Common Labels -->
+    <string name="label_play">PLAY</string>
+    <string name="label_details">DETAILS</string>
+    <string name="label_episodes">EPISODES</string>
+    <string name="label_seasons">SEASONS</string>
+    <string name="label_synopsis">SYNOPSIS</string>
+    <string name="label_rating">Rating</string>
+    <string name="label_new">NEW</string>
+    <string name="label_edit">EDIT</string>
+    <string name="label_done">DONE</string>
+    <string name="label_clear_all">CLEAR ALL</string>
+
+    <!-- Placeholders & Errors -->
+    <string name="search_hint">Search channels, movies, or series...</string>
+    <string name="no_results">No results found for \"%1$s\"</string>
+    <string name="no_favorites">No favorites yet</string>
+    <string name="error_playback">Playback error: %1$s</string>
+    <string name="error_loading_content">Failed to load content: %1$s</string>
+    <string name="still_watching_title">Are you still watching?</string>
+    <string name="still_watching_message">Playback will stop soon unless you confirm you are still watching.</string>
+</resources>

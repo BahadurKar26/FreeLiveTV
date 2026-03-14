@@ -20,15 +20,17 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
     private val channelDao = database.channelDao()
 
     val allChannels: Flow<List<Channel>> = channelDao.getAllChannels()
-
+    
+    // Review 501: Refactored dynamic category flows to avoid redundant boilerplate
     fun getChannelsByCategoryFlow(category: String): Flow<List<Channel>> = allChannels.map { list ->
-        list.filter {
-            (if (category == "All") true else it.category.contains(category, ignoreCase = true))
-            && it.healthStatus == "ACTIVE"
+        list.filter { 
+            (if (category == "All") true else it.category.contains(category, ignoreCase = true)) 
+            && it.healthStatus == "ACTIVE" 
             && it.isVisible
         }
     }
 
+    // Standard flows for UI rows
     val banglaChannels = getChannelsByCategoryFlow("Bangla")
     val globalChannels = getChannelsByCategoryFlow("Global")
     val newsChannels = getChannelsByCategoryFlow("News")
@@ -51,7 +53,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
     companion object {
         private const val TAG = "ChannelRepository"
         private const val CHANNEL_FILE = "curated_channels.json"
-
+        
         private val USER_AGENTS = listOf(
             "FreeLiveTV-Elite/2.2",
             "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36",
@@ -142,14 +144,14 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
                         lastFailureTime = existing.lastFailureTime,
                         healthStatus = existing.healthStatus,
                         currentUrlIndex = existing.currentUrlIndex,
-                        isVisible = existing.isVisible,
+                        isVisible = existing.isVisible, // Review 701: Preserve visibility flag
                         isNew = false
                     )
                 } else {
                     channel.copy(isNew = true)
                 }
             }
-
+            
             toUpdate.chunked(100).forEach { chunk ->
                 channelDao.insertAll(chunk)
                 yield()
@@ -167,7 +169,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
                     val obj = jsonArray.getJSONObject(i)
                     val id = obj.optString("id", obj.optString("url", "ch_$i"))
                     val name = obj.optString("name", obj.optString("title", "Unknown"))
-
+                    
                     val urls = mutableListOf<String>()
                     if (obj.has("urls")) {
                         val urlsArray = obj.getJSONArray("urls")
@@ -177,7 +179,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
                     } else if (obj.has("url")) {
                         urls.add(obj.getString("url"))
                     }
-
+                    
                     if (urls.isEmpty()) continue
 
                     channels.add(Channel(
@@ -185,7 +187,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
                         name = name,
                         urls = urls.distinct(),
                         logo = obj.optString("logo", ""),
-                        category = CategoryMapper.map(obj.optString("category", "General")),
+                        category = obj.optString("category", "General"),
                         region = obj.optString("region", "Global"),
                         language = obj.optString("language", "English"),
                         priority = obj.optInt("priority", 5),
@@ -210,7 +212,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
     suspend fun reportFailure(channelId: String) {
         val channel = channelDao.getChannelById(channelId)
         channel?.let {
-            it.markAsFailed()
+            it.markAsFailed() // Review 701 logic integrated in markAsFailed
             channelDao.update(it)
         }
     }
