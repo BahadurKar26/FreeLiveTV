@@ -21,7 +21,6 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
 
     val allChannels: Flow<List<Channel>> = channelDao.getAllChannels()
     
-    // Review 501: Refactored dynamic category flows to avoid redundant boilerplate
     fun getChannelsByCategoryFlow(category: String): Flow<List<Channel>> = allChannels.map { list ->
         list.filter { 
             (if (category == "All") true else it.category.contains(category, ignoreCase = true)) 
@@ -30,7 +29,6 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
         }
     }
 
-    // Standard flows for UI rows
     val banglaChannels = getChannelsByCategoryFlow("Bangla")
     val globalChannels = getChannelsByCategoryFlow("Global")
     val newsChannels = getChannelsByCategoryFlow("News")
@@ -144,7 +142,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
                         lastFailureTime = existing.lastFailureTime,
                         healthStatus = existing.healthStatus,
                         currentUrlIndex = existing.currentUrlIndex,
-                        isVisible = existing.isVisible, // Review 701: Preserve visibility flag
+                        isVisible = existing.isVisible,
                         isNew = false
                     )
                 } else {
@@ -187,7 +185,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
                         name = name,
                         urls = urls.distinct(),
                         logo = obj.optString("logo", ""),
-                        category = obj.optString("category", "General"),
+                        category = CategoryMapper.map(obj.optString("category", "General")),
                         region = obj.optString("region", "Global"),
                         language = obj.optString("language", "English"),
                         priority = obj.optInt("priority", 5),
@@ -212,7 +210,7 @@ class ChannelRepository(private val context: Context, private val scope: Corouti
     suspend fun reportFailure(channelId: String) {
         val channel = channelDao.getChannelById(channelId)
         channel?.let {
-            it.markAsFailed() // Review 701 logic integrated in markAsFailed
+            it.markAsFailed()
             channelDao.update(it)
         }
     }
