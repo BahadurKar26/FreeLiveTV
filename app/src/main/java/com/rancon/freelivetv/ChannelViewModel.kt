@@ -25,12 +25,14 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
     private val programDao = database.programDao()
     private val reminderDao = database.reminderDao()
 
-    // Channel States
-    val channels = channelRepository.allChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // Elite Review 3: Added debounce to prevent UI flicker during heavy syncs
+    val channels = channelRepository.allChannels
+        .debounce(300)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val banglaChannels = channelRepository.banglaChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val globalChannels = channelRepository.globalChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
-    // Phase 2: Category States
     val newsChannels = channelRepository.newsChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val sportsChannels = channelRepository.sportsChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val movieChannels = channelRepository.movieChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -40,7 +42,6 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
     val inactiveChannels = channelRepository.inactiveChannels.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val favorites = channelRepository.favorites.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Phase 10: Network State
     private val _networkType = MutableStateFlow(NetworkUtils.getNetworkTypeName(application))
     val networkType: StateFlow<String> = _networkType.asStateFlow()
 
@@ -48,7 +49,6 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
         _networkType.value = NetworkUtils.getNetworkTypeName(getApplication())
     }
 
-    // UI Optimized Home States (QC-009)
     val homeMostWatched = combine(channels, banglaChannels, globalChannels) { all, bangla, global ->
         val mostWatchedIds = all.sortedByDescending { it.lastPlayedTime }.map { it.id }.take(15)
         if (mostWatchedIds.isNotEmpty()) {
@@ -68,56 +68,32 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
         allDistinct.shuffled(random).take(15)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Movie States
     val movies = moviesRepository.allMovies.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val favoriteMovies = moviesRepository.favoriteMovies.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    // Series States
     val series = seriesRepository.allSeries.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Combined Continue Watching State (QC-005 & QC-010 Optimization)
     val continueWatching = combine(movies, series, userDataManager.allProgress) { moviesList, seriesList, progressMap ->
         val list = mutableListOf<ContinueWatchingItem>()
-        
         moviesList.forEach { movie ->
             val progress = progressMap[movie.id] ?: 0L
-            if (progress > 0) {
-                list.add(ContinueWatchingItem(movie.id, movie.title, "movie", movie.posterUrl, progress))
-            }
+            if (progress > 0) list.add(ContinueWatchingItem(movie.id, movie.title, "movie", movie.posterUrl, progress))
         }
-        
         seriesList.forEach { s ->
             s.seasons.forEach { season ->
                 season.episodes.forEach { episode ->
                     val progress = progressMap[episode.id] ?: 0L
-                    if (progress > 0) {
-                        list.add(ContinueWatchingItem(episode.id, "${s.title} - ${episode.getEpisodeDisplay()}", "series", s.posterUrl, progress))
-                    }
+                    if (progress > 0) list.add(ContinueWatchingItem(episode.id, "${s.title} - ${episode.getEpisodeDisplay()}", "series", s.posterUrl, progress))
                 }
             }
         }
-        
         list.sortedByDescending { it.progress }
-    }.flowOn(Dispatchers.Default)
-     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    data class ContinueWatchingItem(
-        val id: String,
-        val title: String,
-        val type: String,
-        val posterUrl: String,
-        val progress: Long
-    )
+    data class ContinueWatchingItem(val id: String, val title: String, val type: String, val posterUrl: String, val progress: Long)
 
-    // Personalization & Recommendations (Phase 4)
     val categoryAffinities = interactionDao.getCategoryAffinities().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    
-    val recommendedChannels = recommendationRepository.getRecommendedChannels()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    
-    val recommendedMovies = recommendationRepository.getRecommendedMovies()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    
+    val recommendedChannels = recommendationRepository.getRecommendedChannels().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val recommendedMovies = recommendationRepository.getRecommendedMovies().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val recentSearches = interactionDao.getRecentInteractions(50)
         .map { list -> list.filter { it.actionType == "SEARCH" }.mapNotNull { it.searchQuery }.distinct().take(10) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -146,9 +122,7 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun loadChannels() {
-        loadContent(forceRefresh = true)
-    }
+    fun loadChannels() { loadContent(forceRefresh = true) }
 
     fun startDiscovery() {
         viewModelScope.launch {
@@ -159,17 +133,15 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // --- EPG Support (Phase 8) ---
     fun getCurrentProgram(channelId: String): Flow<Program?> = flow {
         while(true) {
             emit(programDao.getCurrentProgram(channelId, System.currentTimeMillis()))
-            kotlinx.coroutines.delay(60000) // Update every minute
+            kotlinx.coroutines.delay(60000)
         }
     }
 
     fun getProgramsForChannel(channelId: String): Flow<List<Program>> = programDao.getProgramsForChannel(channelId)
 
-    // --- Reminder Logic (Phase 4.7) ---
     suspend fun hasReminder(programId: Long): Boolean = reminderDao.hasReminder(programId)
 
     fun toggleReminder(program: Program) {
@@ -177,49 +149,18 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
             if (reminderDao.hasReminder(program.id)) {
                 reminderDao.deleteByProgramId(program.id)
             } else {
-                reminderDao.insert(
-                    Reminder(
-                        programId = program.id,
-                        channelId = program.channelId,
-                        programTitle = program.title,
-                        startTime = program.startTime
-                    )
-                )
+                reminderDao.insert(Reminder(programId = program.id, channelId = program.channelId, programTitle = program.title, startTime = program.startTime))
             }
         }
     }
 
-    // --- Interaction Tracking (Phase 4) ---
-    fun recordInteraction(
-        contentId: String,
-        contentType: String,
-        actionType: String,
-        duration: Long = 0,
-        searchQuery: String? = null,
-        category: String? = null
-    ) {
+    fun recordInteraction(contentId: String, contentType: String, actionType: String, duration: Long = 0, searchQuery: String? = null, category: String? = null) {
         viewModelScope.launch {
-            interactionDao.insert(
-                Interaction(
-                    contentId = contentId,
-                    contentType = contentType,
-                    actionType = actionType,
-                    duration = duration,
-                    timestamp = System.currentTimeMillis(),
-                    searchQuery = searchQuery,
-                    category = category
-                )
-            )
+            interactionDao.insert(Interaction(contentId = contentId, contentType = contentType, actionType = actionType, duration = duration, timestamp = System.currentTimeMillis(), searchQuery = searchQuery, category = category))
         }
     }
 
-    // --- Common logic ---
-    fun toggleFavorite(id: String) {
-        viewModelScope.launch { 
-            channelRepository.toggleFavorite(id)
-        }
-    }
-    
+    fun toggleFavorite(id: String) { viewModelScope.launch { channelRepository.toggleFavorite(id) } }
     fun toggleFavorite(id: String, type: String) {
         viewModelScope.launch { 
             channelRepository.toggleFavorite(id)
@@ -234,14 +175,8 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
             ?: false
     }
 
-    // --- Channel logic ---
-    fun reportChannelFailure(channelId: String) {
-        viewModelScope.launch { channelRepository.reportFailure(channelId) }
-    }
-
-    fun reportChannelSuccess(channelId: String) {
-        viewModelScope.launch { channelRepository.reportSuccess(channelId) }
-    }
+    fun reportChannelFailure(channelId: String) { viewModelScope.launch { channelRepository.reportFailure(channelId) } }
+    fun reportChannelSuccess(channelId: String) { viewModelScope.launch { channelRepository.reportSuccess(channelId) } }
 
     fun recordWatch(id: String) {
         viewModelScope.launch { 
@@ -260,53 +195,25 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun getProgress(id: String): Long = userDataManager.getProgress(id)
-
-    fun saveProgress(id: String, position: Long) {
-        userDataManager.saveProgress(id, position)
-    }
-
-    fun getFailureCount(channelId: String): Int {
-        return channels.value.find { it.id == channelId }?.failureCount ?: 0
-    }
+    fun saveProgress(id: String, position: Long) { userDataManager.saveProgress(id, position) }
 
     fun searchChannels(query: String): Flow<List<Channel>> = channelRepository.searchChannels(query)
 
     fun searchMovies(query: String): List<Movie> {
         if (query.isBlank()) return emptyList()
         val lowerQuery = query.lowercase()
-        recordInteraction("SEARCH", "SEARCH", "SEARCH", searchQuery = query)
-        return movies.value.filter { movie ->
-            movie.title.lowercase().contains(lowerQuery) ||
-                    movie.genre.any { it.lowercase().contains(lowerQuery) } ||
-                    movie.description.lowercase().contains(lowerQuery)
-        }
+        return movies.value.filter { it.title.lowercase().contains(lowerQuery) || it.genre.any { g -> g.lowercase().contains(lowerQuery) } }
     }
 
     fun searchSeries(query: String): List<Series> {
         if (query.isBlank()) return emptyList()
         val lowerQuery = query.lowercase()
-        recordInteraction("SEARCH", "SEARCH", "SEARCH", searchQuery = query)
-        return series.value.filter { s ->
-            s.title.lowercase().contains(lowerQuery) ||
-                    s.genre.any { it.lowercase().contains(lowerQuery) } ||
-                    s.description.lowercase().contains(lowerQuery)
-        }
+        return series.value.filter { it.title.lowercase().contains(lowerQuery) || it.genre.any { g -> g.lowercase().contains(lowerQuery) } }
     }
-
-    fun getMostWatchedChannels(): List<Channel> {
-        return channels.value.sortedByDescending { it.lastPlayedTime }.take(10)
-    }
-
-    fun getRecentlyPlayedChannels(): List<Channel> {
-        return channels.value.filter { it.lastPlayedTime > 0 }.sortedByDescending { it.lastPlayedTime }.take(10)
-    }
-
-    fun getSmartRecommendedIds(): List<String> = getMostWatchedChannels().map { it.id }
 
     fun resetAllData() {
         viewModelScope.launch {
             userDataManager.resetAll()
-            // Robust Database Reset (QC-008)
             withContext(Dispatchers.IO) {
                 database.clearAllTables()
                 channelRepository.refreshChannels()
@@ -316,19 +223,9 @@ class ChannelViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun clearWatchHistory() {
-        viewModelScope.launch {
-            userDataManager.resetAll()
-        }
-    }
-    
-    fun getSeriesById(seriesId: String): Series? {
-        return series.value.find { it.id == seriesId }
-    }
+    fun getSeriesById(seriesId: String): Series? = series.value.find { it.id == seriesId }
 
-    suspend fun getRecommendationsForTopCategory(): Pair<String, List<Channel>> {
-        return recommendationRepository.getRecommendationsForTopCategory()
-    }
+    suspend fun getRecommendationsForTopCategory(): Pair<String, List<Channel>> = recommendationRepository.getRecommendationsForTopCategory()
 
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {

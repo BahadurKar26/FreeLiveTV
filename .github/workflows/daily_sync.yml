@@ -14,7 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Use the PAT Secret to allow updating workflows and bypassing restrictions
           token: ${{ secrets.PAT_TOKEN }}
 
       - name: Set up Python
@@ -39,5 +38,6 @@ jobs:
           git add app/src/main/assets/curated_channels.json
           git add app/src/main/assets/movies.json
           git add app/src/main/assets/series.json
-          # Only push if there are actual data changes
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Automated daily content sync [skip ci]" && git push)
+          # Final Absolute Resolver: Fail-safe commit logic
+          git status
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automated daily content sync [skip ci]" && git push origin main)
